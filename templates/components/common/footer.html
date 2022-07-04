@@ -1,0 +1,94 @@
+{{#if banners.bottom}}
+    {{#if settings.data_tag_enabled}}
+        <div class="banners" data-banner-location="bottom">
+            {{#each (limit banners.bottom_metadata 1)}}
+                <div class="banner" data-event-type="promotion" data-entity-id="{{this.id}}" data-name="{{this.banner-name}}" data-position="{{this.location}}" data-name="{{this.banner-name}}">
+                    <div data-event-type="promotion-click">
+                        {{{this.content}}}
+                    </div>
+                </div>
+            {{/each}}
+        </div>
+    {{else}}
+        <div class="banners" data-banner-location="bottom">
+            <div class="banner">
+                {{{limit banners.bottom 1}}}
+            </div>
+        </div>
+    {{/if}}
+
+{{/if}}
+<footer class="footer" role="contentinfo">
+    <h2 class="footer-title-sr-only">{{lang 'footer.title'}}</h2>
+    <div class="container">
+        <section class="footer-info">
+            <article class="footer-info-col footer-info-col--small fflogo">
+                <div class="footer_logo">
+                  <img src="/content/logo_footer.svg" alt=""/>
+                </div>
+                {{> components/common/social-links}}
+            </article>
+            <article class="footer-info-col footer-info-col--small">
+                <h3 class="footer-info-heading">ABOUT</h3>
+                <ul class="footer-info-list">
+                    <li>
+                        <a href="/about-us/">About Us</a>
+                    </li>
+                    <li>
+                        <a href="/contact-us/">Contact</a>
+                    </li>
+                    <li>
+                        <a href="/privacy-policy/">Privacy Policy</a>
+                    </li>
+                    <li>
+                        <a href="/shipping-returns/">Shipping & Returns</a>
+                    </li>
+                    <li>
+                        <a href="/blog/">Blog</a>
+                    </li>
+                </ul>
+            </article>
+            <article class="footer-info-col footer-info-col--small">
+                <h3 class="footer-info-heading">CONTACT</h3>
+                <div class="store_address">
+                  <p>The Monterey Company, Inc.<br> 35 SW Century Dr. Suite 110<br> Bend, Oregon 97702</p>
+                  <span class="st_call">
+                    <a href="tel:877-290-9290">877-290-9290</a>
+                  </span>
+                </div>
+            </article>
+            <article class="footer-info-col ffnews" data-section-type="newsletterSubscription">
+                {{#if settings.show_newsletter_box}}
+                    {{> components/common/subscription-form}}
+                {{/if}}
+                {{> components/common/payment-icons}}
+            </article>
+        </section>
+        {{#if settings.paypal_commerce_credit_message}}
+        <div class="footer-copyright">
+            <p class="paypal-credit">{{nl2br settings.paypal_commerce_credit_message}}</p>
+        </div>
+        {{/if}}
+        {{!-- {{#if theme_settings.show_powered_by}}
+            <div class="footer-copyright">
+                <p class="powered-by">{{lang 'footer.powered_by'}} <a href="https://www.bigcommerce.com?utm_source=merchant&amp;utm_medium=poweredbyBC" rel="nofollow">BigCommerce</a></p>
+            </div>
+        {{/if}} --}}
+        <div class="footer_bottom">
+          <ul class="payment_icon">
+            <li><img src="/content/american_express.svg" alt=""></li>
+            <li><img src="/content/apple_pay.svg" alt=""></li>
+            <li><img src="/content/master_card.svg" alt=""></li>
+            <li><img src="/content/paypal.svg" alt=""></li>
+            <li><img src="/content/visa.svg" alt=""></li>
+          </ul>
+          {{#if theme_settings.show_copyright_footer}}
+              <div class="footer-copyright">
+                  <p class="powered-by">&copy; {{moment format="YYYY"}} {{settings.store_name}}. All Rights Reserved. The Art of eCommerce™ by <a href="https://www.1digitalagency.com/" target="_blank">1Digital®</a> Agency.</p>
+              </div>
+          {{/if}}
+        </div>
+
+    </div>
+    {{{region name="ssl_site_seal--global"}}}
+</footer>

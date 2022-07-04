@@ -1,0 +1,10 @@
+<a href="{{urls.home}}" class="header-logo__link" data-header-logo-link>
+    {{#if settings.store_logo.image}}
+        <img class="header-logo-image-unknown-size"
+             src="/content/logo.svg"
+             alt="{{settings.store_logo.title}}"
+             title="{{settings.store_logo.title}}">
+    {{else}}
+    <span class="header-logo-text">{{settings.store_logo.title}}</span>
+    {{/if}}
+</a>
