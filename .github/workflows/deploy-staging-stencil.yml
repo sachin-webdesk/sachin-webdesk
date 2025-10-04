@@ -2,7 +2,7 @@ name: BigCommerce — Bundle + Upload Theme (staging)
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ main ]
 
 jobs:
   bundle-and-upload:
