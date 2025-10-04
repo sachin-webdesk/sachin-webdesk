@@ -33,43 +33,79 @@ jobs:
           # Install specific versions of webpack and webpack-cli that are known to work
           npm install --save-dev webpack@4.47.0 webpack-cli@4.10.0
           
-          # Build the theme
-          npx webpack --config webpack.prod.js || echo "Webpack build failed, but continuing..."
+          # Clean any previous builds
+          rm -rf dist/
           
-          # Run stencil bundle
-          stencil bundle || echo "Stencil bundle failed, but continuing..."
+          # Build the theme
+          npx webpack --config webpack.prod.js
+          
+          # Ensure parsed directory exists
+          mkdir -p parsed/
+          
+          # Run stencil bundle to generate parsed templates
+          stencil bundle || echo "Stencil bundle completed with warnings"
+          
+          # Verify parsed templates were generated
+          if [ ! "$(ls -A parsed/ 2>/dev/null)" ]; then
+            echo "Error: No parsed templates were generated!"
+            echo "Contents of template directory:"
+            ls -la templates/
+            exit 1
+          fi
           
       - name: Package theme
         run: |
           mkdir -p dist
+          
           # List all files to debug
           echo "Current directory contents:"
           ls -la
           
-          echo "\nChecking for theme files:"
-          ls -la assets/dist/ 2>/dev/null || echo "No assets/dist directory found"
+          # Verify required directories exist
+          echo "\nChecking for required directories:"
+          for dir in assets/ templates/ lang/ config.json; do
+            if [ ! -e "$dir" ]; then
+              echo "Error: Missing required directory/file: $dir"
+              exit 1
+            fi
+            echo "- $dir: $(ls -la $dir | wc -l) items"
+          done
+          
+          # Verify parsed templates were generated
+          if [ ! -d "parsed" ] || [ -z "$(ls -A parsed/ 2>/dev/null)" ]; then
+            echo "Error: No parsed templates found in 'parsed/' directory"
+            echo "Trying to generate them now..."
+            stencil bundle || {
+              echo "Failed to generate parsed templates"
+              exit 1
+            }
+          fi
+          
+          # Create a temporary directory for packaging
+          PACKAGE_DIR="$RUNNER_TEMP/theme-package"
+          mkdir -p "$PACKAGE_DIR"
+          
+          # Copy only the necessary files
+          echo "\nCopying theme files..."
+          cp -r assets/ "$PACKAGE_DIR/"
+          cp -r config.json "$PACKAGE_DIR/"
+          cp -r templates/ "$PACKAGE_DIR/"
+          cp -r lang/ "$PACKAGE_DIR/"
+          cp -r parsed/ "$PACKAGE_DIR/" 2>/dev/null || echo "No parsed directory to copy"
           
           # Create zip of the theme
           echo "\nCreating theme.zip..."
-          zip -r dist/theme.zip . -x \
-            "*.git*" \
-            "*.github/*" \
-            "node_modules/*" \
-            "dist/*" \
-            ".DS_Store" \
-            "*.log" \
-            "*.md" \
-            "*.lock" \
-            "*.editorconfig" \
-            "*.gitignore" \
-            "*.eslintrc" \
-            "*.prettierrc" \
-            "*.babelrc" \
-            "*.npmrc" \
-            "*.yarnrc" \
-            "*.env*" \
-            "*.example" \
-            "*~"
+          cd "$PACKAGE_DIR"
+          zip -r "$GITHUB_WORKSPACE/dist/theme.zip" .
+          
+          # Verify the zip was created
+          if [ ! -f "$GITHUB_WORKSPACE/dist/theme.zip" ]; then
+            echo "Error: Failed to create theme.zip"
+            exit 1
+          fi
+          
+          echo "\nTheme packaged successfully!"
+          ls -lh "$GITHUB_WORKSPACE/dist/"
 
       # 6️⃣ Verify that theme.zip exists
       - name: Verify theme.zip
