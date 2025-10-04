@@ -35,24 +35,30 @@ jobs:
       - name: Build theme
         run: |
           # Clean any previous builds
-          rm -rf dist/
+          rm -rf dist/ parsed/
           
           # Build the theme
           npx webpack --config webpack.prod.js
           
-          # Ensure parsed directory exists
-          mkdir -p parsed/
-          
           # Run stencil bundle to generate parsed templates
-          stencil bundle || echo "Stencil bundle completed with warnings"
+          echo "Running stencil bundle to generate parsed templates..."
+          stencil bundle
           
           # Verify parsed templates were generated
-          if [ ! "$(ls -A parsed/ 2>/dev/null)" ]; then
+          if [ ! -d "parsed" ] || [ -z "$(ls -A parsed/ 2>/dev/null)" ]; then
             echo "Error: No parsed templates were generated!"
             echo "Contents of template directory:"
             ls -la templates/
-            exit 1
+            echo "Trying to run stencil bundle again..."
+            stencil bundle --verbose
+            if [ ! -d "parsed" ] || [ -z "$(ls -A parsed/ 2>/dev/null)" ]; then
+              echo "Error: Still no parsed templates after retry!"
+              exit 1
+            fi
           fi
+          
+          echo "Parsed templates generated successfully:"
+          ls -la parsed/
           
       - name: Package theme
         run: |
@@ -72,14 +78,11 @@ jobs:
             echo "- $dir: $(ls -la $dir | wc -l) items"
           done
           
-          # Verify parsed templates were generated
+          # Verify parsed templates exist (should already be generated in build step)
           if [ ! -d "parsed" ] || [ -z "$(ls -A parsed/ 2>/dev/null)" ]; then
             echo "Error: No parsed templates found in 'parsed/' directory"
-            echo "Trying to generate them now..."
-            stencil bundle || {
-              echo "Failed to generate parsed templates"
-              exit 1
-            }
+            echo "This should not happen as they were generated in the build step"
+            exit 1
           fi
           
           # Create a temporary directory for packaging
