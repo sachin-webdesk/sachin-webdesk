@@ -205,6 +205,7 @@ jobs:
                   echo "Theme processed successfully!"
                   echo "Theme UUID: $THEME_UUID"
                   echo "THEME_UUID=$THEME_UUID" >> $GITHUB_ENV
+                  echo "theme_uuid=$THEME_UUID" >> $GITHUB_OUTPUT
                   exit 0
                 else
                   echo "Error: Theme UUID not found in response"
@@ -242,11 +243,12 @@ jobs:
         env:
           BC_API_TOKEN: ${{ secrets.BC_API_TOKEN }}
           BC_STORE_HASH: ${{ secrets.BC_STORE_HASH }}
+          THEME_UUID: ${{ steps.process-upload.outputs.theme_uuid }}
         run: |
-          echo "Publishing theme with UUID: ${{ env.THEME_UUID }}"
+          echo "Publishing theme with UUID: ${THEME_UUID}"
           
           # Publish the theme
-          curl -v -X PUT "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/${{ env.THEME_UUID }}/actions/publish" \
+          curl -v -X PUT "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/${THEME_UUID}/actions/publish" \
             -H "X-Auth-Token: ${BC_API_TOKEN}" \
             -H "Accept: application/json" \
             -o publish-response.json
