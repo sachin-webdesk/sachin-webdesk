@@ -1,11 +1,10 @@
-const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin,
-    CleanPlugin = require('clean-webpack-plugin'),
-    LodashPlugin = require('lodash-webpack-plugin'),
-    path = require('path'),
-    webpack = require('webpack');
+const path = require('path');
+const webpack = require('webpack');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const LodashModuleReplacementPlugin = require('lodash-webpack-plugin');
 
-// Common configuration, with extensions in webpack.dev.js and webpack.prod.js.
 module.exports = {
+    mode: 'production',
     bail: true,
     context: __dirname,
     entry: {
@@ -46,43 +45,46 @@ module.exports = {
         ],
     },
     output: {
-        chunkFilename: 'theme-bundle.chunk.[name].js',
-        filename: 'theme-bundle.[name].js',
         path: path.resolve(__dirname, 'assets/dist'),
+        publicPath: '/',
+        filename: 'theme-bundle.[name].js',
+        chunkFilename: 'theme-bundle.chunk.[name].js'
     },
     performance: {
         hints: 'warning',
         maxAssetSize: 1024 * 300,
-        maxEntrypointSize: 1024 * 300,
+        maxEntrypointSize: 1024 * 300
     },
     plugins: [
-        new CleanPlugin(['assets/dist'], {
-            verbose: false,
-            watch: false,
+        new CleanWebpackPlugin({
+            cleanOnceBeforeBuildPatterns: ['assets/dist'],
+            verbose: true,
+            dry: false
         }),
-        new LodashPlugin(), // Complements babel-plugin-lodash by shrinking its cherry-picked builds further.
-        new webpack.ProvidePlugin({ // Provide jquery automatically without explicit import
+        new webpack.ProvidePlugin({
             $: 'jquery',
             jQuery: 'jquery',
             'window.jQuery': 'jquery',
+            'window.$': 'jquery'
         }),
-        new BundleAnalyzerPlugin({
-            analyzerMode: 'static',
-            openAnalyzer: false,
-        }),
+        new webpack.EnvironmentPlugin({
+            NODE_ENV: 'production'
+        })
     ],
     resolve: {
         alias: {
-            jquery: path.resolve(__dirname, 'node_modules/jquery/dist/jquery.min.js'),
-            jstree: path.resolve(__dirname, 'node_modules/jstree/dist/jstree.min.js'),
-            lazysizes: path.resolve(__dirname, 'node_modules/lazysizes/lazysizes.min.js'),
-            nanobar: path.resolve(__dirname, 'node_modules/nanobar/nanobar.min.js'),
-            'slick-carousel': path.resolve(__dirname, 'node_modules/slick-carousel/slick/slick.min.js'),
-            'svg-injector': path.resolve(__dirname, 'node_modules/svg-injector/dist/svg-injector.min.js'),
-            sweetalert2: path.resolve(__dirname, 'node_modules/sweetalert2/dist/sweetalert2.min.js'),
+            jquery: 'jquery/dist/jquery.min.js',
+            jstree: 'jstree/dist/jstree.min.js',
+            lazysizes: 'lazysizes/lazysizes.min.js',
+            nanobar: 'nanobar/nanobar.min.js',
+            'slick-carousel': 'slick-carousel/slick/slick.min.js',
+            'svg-injector': 'svg-injector/dist/svg-injector.min.js',
+            sweetalert2: 'sweetalert2/dist/sweetalert2.min.js'
         },
-        fallback: {
-            url: require.resolve('url/')
-        }
+        extensions: ['.js', '.json'],
+        modules: [
+            path.resolve(__dirname, 'node_modules'),
+            'node_modules'
+        ]
     },
 };
