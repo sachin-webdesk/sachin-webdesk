@@ -1,41 +1,41 @@
-name: BigCommerce — Deploy to Staging (Stencil push)
+name: BigCommerce — Bundle + Upload Theme (staging)
 
 on:
   push:
-    branches: [ main ]
+    branches: [ develop ]
 
 jobs:
-  build-and-deploy:
-    name: Build & Deploy
+  bundle-and-upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install deps & Stencil CLI
+        run: |
+          npm ci
+          npm install -g @bigcommerce/stencil-cli@latest
 
-      - name: Install Stencil CLI
-        run: npm install -g @bigcommerce/stencil-cli@latest
+      - name: Bundle theme
+        run: |
+          mkdir -p ./dist
+          # create predictable zip name
+          stencil bundle --name "theme-${{ github.sha }}.zip" --dest ./dist
 
-      - name: Init stencil (non-interactive)
+      - name: Upload theme via Themes API
         env:
-          BC_STORE_URL: ${{ secrets.BC_STORE_URL }}
-          BC_STENCIL_TOKEN: ${{ secrets.BC_STENCIL_TOKEN }}
+          BC_API_TOKEN: ${{ secrets.BC_API_TOKEN }}
+          BC_STORE_HASH: ${{ secrets.BC_STORE_HASH }}
         run: |
-          # create stencil config in CI workspace
-          stencil init --url "$BC_STORE_URL" --token "$BC_STENCIL_TOKEN"
-
-      - name: Run linter/tests
-        run: |
-          npm run lint || true    # replace with your lint/test commands
-
-      - name: Bundle & push (apply)
-        run: |
-          # push will bundle + upload; -a auto apply (first variation) -d deletes oldest if limit reached
-          stencil push -a -d
+          ZIP=./dist/theme-${{ github.sha }}.zip
+          echo "Uploading $ZIP"
+          curl -s -X POST "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes" \
+            -H "X-Auth-Token: ${BC_API_TOKEN}" \
+            -H "Accept: application/json" \
+            -F "file=@${ZIP}" \
+            -o upload-response.json
+          cat upload-response.json
