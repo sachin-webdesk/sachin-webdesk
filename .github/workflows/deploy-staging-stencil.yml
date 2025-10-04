@@ -15,27 +15,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 3️⃣ Install dependencies & optional build
       - name: Install dependencies
-        run: |
-          npm ci
-          npm run build || echo "No build step, skipping"
-
-      # 4️⃣ Install Stencil CLI globally
+        run: npm ci
+        
       - name: Install Stencil CLI
         run: npm install -g @bigcommerce/stencil-cli@latest
-
-      # 5️⃣ Bundle the theme correctly
-      - name: Bundle theme
+        
+      - name: Build theme
+        run: |
+          npm run build
+          stencil bundle
+          
+      - name: Package theme
         run: |
           mkdir -p dist
-          npx stencil bundle ./sachin-webdesk --dest ./dist --name theme.zip
+          # The stencil bundle command should create theme files in the root
+          # Let's verify what files were created
+          ls -la
+          
+          # Create a zip of the theme files
+          # This assumes the theme files are in the root directory
+          # Adjust the files to include as needed
+          zip -r dist/theme.zip . -x "*.git*" "*.github/*" "node_modules/*" "dist/*"
 
       # 6️⃣ Verify that theme.zip exists
       - name: Verify theme.zip
