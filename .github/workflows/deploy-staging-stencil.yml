@@ -58,11 +58,41 @@ jobs:
           BC_API_TOKEN: ${{ secrets.BC_API_TOKEN }}
           BC_STORE_HASH: ${{ secrets.BC_STORE_HASH }}
         run: |
-          THEME_UUID=$(jq -r '.data[0].uuid' upload-response.json)
-          if [ "$THEME_UUID" = "null" ] || [ -z "$THEME_UUID" ]; then
-            echo "Theme upload failed, cannot publish!"
+          JOB_ID=$(jq -r '.job_id' upload-response.json)
+          if [ "$JOB_ID" = "null" ] || [ -z "$JOB_ID" ]; then
+            echo "Theme upload failed, no job_id returned!"
+            cat upload-response.json
             exit 1
           fi
+
+          # Poll the job status endpoint
+          for i in {1..20}; do
+            echo "Checking job status (attempt $i)..."
+            curl -s -X GET "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/jobs/${JOB_ID}" \
+              -H "X-Auth-Token: ${BC_API_TOKEN}" \
+              -H "Accept: application/json" \
+              -o job-status.json
+            cat job-status.json
+
+            STATUS=$(jq -r '.data.status' job-status.json)
+            if [ "$STATUS" = "COMPLETED" ]; then
+              THEME_UUID=$(jq -r '.data.result.theme_uuid' job-status.json)
+              echo "Theme upload completed. UUID: $THEME_UUID"
+              break
+            elif [ "$STATUS" = "FAILED" ]; then
+              echo "Theme upload job failed!"
+              exit 1
+            else
+              echo "Status: $STATUS. Waiting 10 seconds before retry..."
+              sleep 10
+            fi
+          done
+
+          if [ -z "$THEME_UUID" ] || [ "$THEME_UUID" = "null" ]; then
+            echo "Theme UUID not found after polling job status."
+            exit 1
+          fi
+
           echo "Publishing theme UUID: $THEME_UUID"
           curl -s -X PUT "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/${THEME_UUID}/actions/publish" \
             -H "X-Auth-Token: ${BC_API_TOKEN}" \
