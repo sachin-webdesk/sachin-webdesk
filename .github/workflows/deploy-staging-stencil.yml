@@ -18,12 +18,16 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '16.20.2'  # Using LTS version known to work with Stencil CLI
+          node-version: '14.21.3'  # Using version compatible with stencil-utils
 
       - name: Install dependencies
         run: |
           npm install -g npm@8
-          npm ci --legacy-peer-deps
+          # Remove old lock file and regenerate it to match package.json
+          rm -f package-lock.json
+          npm install --legacy-peer-deps
+          # Fix any vulnerabilities that can be automatically resolved
+          npm audit fix --legacy-peer-deps || echo "Some vulnerabilities could not be automatically fixed"
           
       - name: Install Stencil CLI
         run: npm install -g @bigcommerce/stencil-cli@latest
