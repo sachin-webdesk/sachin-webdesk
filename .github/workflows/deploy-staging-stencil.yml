@@ -50,6 +50,13 @@ jobs:
             -F "file=@${ZIP}" \
             -o upload-response.json
           cat upload-response.json
+          jq . upload-response.json || echo "jq failed to parse upload-response.json"
+
+      - name: Print upload error (for debugging)
+        run: |
+          echo '--- upload-response.json content ---'
+          cat upload-response.json
+          echo '--- end upload-response.json ---'
 
       - name: Publish theme
         env:
