@@ -1,78 +1,48 @@
 name: Deploy BigCommerce Theme
 
 on:
-  workflow_dispatch:   # allows manual trigger
+  workflow_dispatch:   # manual trigger
   push:
     branches:
-      - main           # change if needed
+      - main           # change if you use a different branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Set up Node.js
-      - name: Set up Node.js
+      - name: Set up Node (if your theme build needs it)
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '18'
 
-      # 3️⃣ Install dependencies & build (if any)
-      - name: Install dependencies
+      # 👇 Build/compile your theme if needed
+      # Replace this with your actual build command
+      - name: Install dependencies & build
         run: |
-          npm ci
+          npm install
           npm run build || echo "No build step, skipping"
 
-      # 4️⃣ Install Stencil CLI globally
-      - name: Install Stencil CLI
-        run: npm install -g @bigcommerce/stencil-cli@latest
-
-      # 5️⃣ Bundle the theme correctly
-      - name: Bundle theme
+      - name: Package theme into zip
         run: |
           mkdir -p dist
-          # Change 'theme-folder' to the folder that contains config.json
-          npx stencil bundle ./theme-folder --dest ./dist --name theme.zip
+          zip -r ./dist/theme.zip ./ --exclude '.git/*' '.github/*' 'node_modules/*' 'dist/*'
 
-      # 6️⃣ Verify that theme.zip exists
       - name: Verify theme.zip
         run: |
           ls -lh ./dist
           stat ./dist/theme.zip
 
-      # 7️⃣ Upload theme to BigCommerce
-      - name: Upload theme
-        env:
-          BC_API_TOKEN: ${{ secrets.BC_API_TOKEN }}
-          BC_STORE_HASH: ${{ secrets.BC_STORE_HASH }}
+      - name: Upload theme to BigCommerce
         run: |
           ZIP=$GITHUB_WORKSPACE/dist/theme.zip
           echo "Uploading $ZIP"
-          curl -s -X POST "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes" \
-            -H "X-Auth-Token: ${BC_API_TOKEN}" \
+          curl -s -X POST "https://api.bigcommerce.com/stores/${{ secrets.BC_STORE_HASH }}/v3/themes" \
+            -H "X-Auth-Token: ${{ secrets.BC_API_TOKEN }}" \
             -H "Accept: application/json" \
             -F "file=@${ZIP}" \
             -o upload-response.json
           cat upload-response.json
-
-      # 8️⃣ Publish the theme automatically
-      - name: Publish theme
-        env:
-          BC_API_TOKEN: ${{ secrets.BC_API_TOKEN }}
-          BC_STORE_HASH: ${{ secrets.BC_STORE_HASH }}
-        run: |
-          THEME_UUID=$(jq -r '.data[0].uuid' upload-response.json)
-          if [ "$THEME_UUID" = "null" ] || [ -z "$THEME_UUID" ]; then
-            echo "Theme upload failed, cannot publish!"
-            exit 1
-          fi
-          echo "Publishing theme UUID: $THEME_UUID"
-          curl -s -X PUT "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/${THEME_UUID}/actions/publish" \
-            -H "X-Auth-Token: ${BC_API_TOKEN}" \
-            -H "Accept: application/json" \
-            -o publish-response.json
-          cat publish-response.json
