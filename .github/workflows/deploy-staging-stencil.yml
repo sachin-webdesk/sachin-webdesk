@@ -1,35 +1,35 @@
 name: Deploy BigCommerce Theme
 
 on:
-  workflow_dispatch:   # manual trigger
+  workflow_dispatch:
   push:
     branches:
-      - main           # change if you use a different branch
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
-      # 👇 Build/compile your theme if needed
-      # Replace this with your actual build command
-      - name: Install dependencies & build
+      - name: Install dependencies
         run: |
-          npm install
-          npm run build || echo "No build step, skipping"
+          npm ci
+          npm run build || echo "No build step"
 
-      - name: Package theme into zip
+      - name: Install Stencil CLI
+        run: npm install -g @bigcommerce/stencil-cli
+
+      - name: Bundle theme
         run: |
           mkdir -p dist
-          zip -r ./dist/theme.zip ./ --exclude '.git/*' '.github/*' 'node_modules/*' 'dist/*'
+          npx stencil bundle ./theme-folder --dest ./dist --name theme.zip
 
       - name: Verify theme.zip
         run: |
@@ -39,13 +39,12 @@ jobs:
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Upload theme to BigCommerce
+      - name: Upload theme
         env:
           BC_API_TOKEN: ${{ secrets.BC_API_TOKEN }}
           BC_STORE_HASH: ${{ secrets.BC_STORE_HASH }}
         run: |
           ZIP=$GITHUB_WORKSPACE/dist/theme.zip
-          echo "Uploading $ZIP"
           curl -s -X POST "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes" \
             -H "X-Auth-Token: ${BC_API_TOKEN}" \
             -H "Accept: application/json" \
@@ -59,41 +58,28 @@ jobs:
           BC_STORE_HASH: ${{ secrets.BC_STORE_HASH }}
         run: |
           JOB_ID=$(jq -r '.job_id' upload-response.json)
-          if [ "$JOB_ID" = "null" ] || [ -z "$JOB_ID" ]; then
-            echo "Theme upload failed, no job_id returned!"
-            cat upload-response.json
+          if [ -z "$JOB_ID" ] || [ "$JOB_ID" = "null" ]; then
+            echo "Upload failed, no job_id!"
             exit 1
           fi
-
-          # Poll the job status endpoint
           for i in {1..20}; do
-            echo "Checking job status (attempt $i)..."
-            curl -s -X GET "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/jobs/${JOB_ID}" \
+            STATUS=$(curl -s -X GET "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/jobs/${JOB_ID}" \
               -H "X-Auth-Token: ${BC_API_TOKEN}" \
-              -H "Accept: application/json" \
-              -o job-status.json
-            cat job-status.json
-
-            STATUS=$(jq -r '.data.status' job-status.json)
+              -H "Accept: application/json" | jq -r '.data.status')
             if [ "$STATUS" = "COMPLETED" ]; then
-              THEME_UUID=$(jq -r '.data.result.theme_uuid' job-status.json)
-              echo "Theme upload completed. UUID: $THEME_UUID"
+              THEME_UUID=$(curl -s -X GET "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/jobs/${JOB_ID}" \
+                -H "X-Auth-Token: ${BC_API_TOKEN}" \
+                -H "Accept: application/json" | jq -r '.data.result.theme_uuid')
               break
             elif [ "$STATUS" = "FAILED" ]; then
-              echo "Theme upload job failed!"
+              echo "Upload job failed!"
               exit 1
             else
-              echo "Status: $STATUS. Waiting 10 seconds before retry..."
+              echo "Status: $STATUS. Waiting 10 seconds..."
               sleep 10
             fi
           done
 
-          if [ -z "$THEME_UUID" ] || [ "$THEME_UUID" = "null" ]; then
-            echo "Theme UUID not found after polling job status."
-            exit 1
-          fi
-
-          echo "Publishing theme UUID: $THEME_UUID"
           curl -s -X PUT "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/${THEME_UUID}/actions/publish" \
             -H "X-Auth-Token: ${BC_API_TOKEN}" \
             -H "Accept: application/json" \
