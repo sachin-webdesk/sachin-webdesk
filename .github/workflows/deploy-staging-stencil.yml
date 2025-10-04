@@ -52,3 +52,20 @@ jobs:
             -F "file=@${ZIP}" \
             -o upload-response.json
           cat upload-response.json
+
+      - name: Publish theme
+        env:
+          BC_API_TOKEN: ${{ secrets.BC_API_TOKEN }}
+          BC_STORE_HASH: ${{ secrets.BC_STORE_HASH }}
+        run: |
+          THEME_UUID=$(jq -r '.data[0].uuid' upload-response.json)
+          if [ "$THEME_UUID" = "null" ] || [ -z "$THEME_UUID" ]; then
+            echo "Theme upload failed, cannot publish!"
+            exit 1
+          fi
+          echo "Publishing theme UUID: $THEME_UUID"
+          curl -s -X PUT "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/${THEME_UUID}/actions/publish" \
+            -H "X-Auth-Token: ${BC_API_TOKEN}" \
+            -H "Accept: application/json" \
+            -o publish-response.json
+          cat publish-response.json
