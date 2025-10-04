@@ -1,21 +1,21 @@
 name: Deploy BigCommerce Theme
 
 on:
-  workflow_dispatch:   # manual trigger
+  workflow_dispatch:   # allows manual trigger
   push:
     branches:
-      - main           # change if you want another branch
+      - main           # change if needed
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo
+      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node
+      # 2️⃣ Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -27,18 +27,18 @@ jobs:
           npm ci
           npm run build || echo "No build step, skipping"
 
-      # 4️⃣ Install Stencil CLI
+      # 4️⃣ Install Stencil CLI globally
       - name: Install Stencil CLI
         run: npm install -g @bigcommerce/stencil-cli@latest
 
-      # 5️⃣ Bundle the theme properly
+      # 5️⃣ Bundle the theme correctly
       - name: Bundle theme
         run: |
           mkdir -p dist
-          # Bundle theme correctly using stencil CLI
-          npx stencil bundle --dest ./dist --name theme.zip
+          # Change 'theme-folder' to the folder that contains config.json
+          npx stencil bundle ./theme-folder --dest ./dist --name theme.zip
 
-      # 6️⃣ Verify theme.zip
+      # 6️⃣ Verify that theme.zip exists
       - name: Verify theme.zip
         run: |
           ls -lh ./dist
@@ -59,7 +59,7 @@ jobs:
             -o upload-response.json
           cat upload-response.json
 
-      # 8️⃣ Publish the theme automatically (optional)
+      # 8️⃣ Publish the theme automatically
       - name: Publish theme
         env:
           BC_API_TOKEN: ${{ secrets.BC_API_TOKEN }}
