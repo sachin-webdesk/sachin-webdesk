@@ -81,5 +81,8 @@ module.exports = {
             'svg-injector': path.resolve(__dirname, 'node_modules/svg-injector/dist/svg-injector.min.js'),
             sweetalert2: path.resolve(__dirname, 'node_modules/sweetalert2/dist/sweetalert2.min.js'),
         },
+        fallback: {
+            url: require.resolve('url/')
+        }
     },
 };
