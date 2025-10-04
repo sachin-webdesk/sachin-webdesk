@@ -23,6 +23,10 @@ jobs:
       - name: Install dependencies
         run: |
           npm install -g npm@8
+          # Configure npm to use HTTPS instead of SSH for git dependencies
+          npm config set git-tag-version false
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
           # Remove old lock file and regenerate it to match package.json
           rm -f package-lock.json
           npm install --legacy-peer-deps
