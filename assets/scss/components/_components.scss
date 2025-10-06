@@ -9,12 +9,6 @@
 // Slick carousel
 @import "vendor/slick/component";
 
-// Nanobar Ajax loading progress bar
-@import "vendor/nanobar/component";
-
-// SweetAlert2 replacement for JavaScript alert/confirmations
-@import "vendor/sweetalert2/component";
-
 
 // Foundation components
 // -----------------------------------------------------------------------------
@@ -162,12 +156,6 @@
 // Preview Cart
 @import "stencil/previewCart/component";
 
-// Maintenance Notice
-@import "stencil/adminBar/component";
-
-// Cookie Warning
-@import "stencil/cookie/component";
-
 // Login
 @import "stencil/login";
 
@@ -183,11 +171,11 @@
 // Rating
 @import "stencil/rating/component";
 
-// Apple Pay
-@import "stencil/applePay/component";
-
 // Payment Methods
 @import "stencil/paymentMethods/component";
 
 // Categories
 @import "stencil/category/component";
+
+// Contact-Us Form
+@import "stencil/contact/component";

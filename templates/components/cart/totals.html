@@ -4,7 +4,7 @@
             <strong>{{lang 'cart.checkout.subtotal'}}:</strong>
         </div>
         <div class="cart-total-value">
-            {{#or customer (if theme_settings.restrict_to_login '!==' true)}}
+            {{#or customer (unless settings.hide_price_from_guests)}}
                 <span>{{cart.sub_total.formatted}}</span>
             {{else}}
                 {{> components/common/login-for-pricing}}
@@ -20,6 +20,18 @@
                 <span>{{cart.gift_wrapping_cost.formatted}}</span>
             </div>
         </li>
+    {{/if}}
+    {{#if cart.fees}}
+        {{#each cart.fees}}
+            <li class="cart-total">
+                <div class="cart-total-label">
+                    <strong>{{display_name}}:</strong>
+                </div>
+                <div class="cart-total-value">
+                    <span>{{cost.formatted}}</span>
+                </div>
+            </li>
+        {{/each}}
     {{/if}}
     {{#if cart.shipping_handling.show_estimator}}
         <li class="cart-total">
@@ -99,7 +111,7 @@
             <strong>{{lang 'cart.checkout.grand_total'}}:</strong>
         </div>
         <div class="cart-total-value cart-total-grandTotal">
-            {{#or customer (if theme_settings.restrict_to_login '!==' true)}}
+            {{#or customer (unless settings.hide_price_from_guests)}}
                 <span>{{cart.grand_total.formatted}}</span>
             {{else}}
                 {{> components/common/login-for-pricing}}

@@ -1,42 +1,10 @@
-const merge = require('webpack-merge');
-const common = require('./webpack.common.js');
-const TerserPlugin = require('terser-webpack-plugin');
+const { merge } = require('webpack-merge'),
+      commonConfig = require('./webpack.common.js');
 
-module.exports = merge(common, {
-    mode: 'production',
+module.exports = merge(commonConfig, {
     devtool: 'source-map',
-    performance: {
-        hints: 'warning'
-    },
+    mode: 'production',
     optimization: {
-        minimizer: [
-            new TerserPlugin({
-                parallel: true,
-                terserOptions: {
-                    ecma: 6,
-                    compress: {
-                        drop_console: true,
-                        warnings: true
-                    },
-                    output: {
-                        comments: false
-                    }
-                }
-            })
-        ],
-        splitChunks: {
-            chunks: 'all',
-            cacheGroups: {
-                vendors: {
-                    test: /[\\/]node_modules[\\/]/,
-                    priority: -10
-                },
-                default: {
-                    minChunks: 2,
-                    priority: -20,
-                    reuseExistingChunk: true
-                }
-            }
-        }
-    }
+        emitOnErrors: false,
+    },
 });

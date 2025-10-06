@@ -4,8 +4,7 @@ import checkIsGiftCertValid from './common/gift-certificate-validator';
 import { createTranslationDictionary } from './common/utils/translations-utils';
 import utils from '@bigcommerce/stencil-utils';
 import ShippingEstimator from './cart/shipping-estimator';
-import { defaultModal, ModalEvents } from './global/modal';
-import swal from './global/sweet-alert';
+import { defaultModal, showAlertModal, ModalEvents } from './global/modal';
 import CartItemDetails from './common/cart-item-details';
 
 export default class Cart extends PageManager {
@@ -45,15 +44,9 @@ export default class Cart extends PageManager {
         const newQty = $target.data('action') === 'inc' ? oldQty + 1 : oldQty - 1;
         // Does not quality for min/max quantity
         if (newQty < minQty) {
-            return swal.fire({
-                text: minError,
-                icon: 'error',
-            });
+            return showAlertModal(minError);
         } else if (maxQty > 0 && newQty > maxQty) {
-            return swal.fire({
-                text: maxError,
-                icon: 'error',
-            });
+            return showAlertModal(maxError);
         }
 
         this.$overlay.show();
@@ -68,10 +61,7 @@ export default class Cart extends PageManager {
                 this.refreshContent(remove);
             } else {
                 $el.val(oldQty);
-                swal.fire({
-                    text: response.data.errors.join('\n'),
-                    icon: 'error',
-                });
+                showAlertModal(response.data.errors.join('\n'));
             }
         });
     }
@@ -88,25 +78,16 @@ export default class Cart extends PageManager {
         let invalidEntry;
 
         // Does not quality for min/max quantity
-        if (!newQty) {
+        if (!Number.isInteger(newQty)) {
             invalidEntry = $el.val();
             $el.val(oldQty);
-            return swal.fire({
-                text: this.context.invalidEntryMessage.replace('[ENTRY]', invalidEntry),
-                icon: 'error',
-            });
+            return showAlertModal(this.context.invalidEntryMessage.replace('[ENTRY]', invalidEntry));
         } else if (newQty < minQty) {
             $el.val(oldQty);
-            return swal.fire({
-                text: minError,
-                icon: 'error',
-            });
+            return showAlertModal(minError);
         } else if (maxQty > 0 && newQty > maxQty) {
             $el.val(oldQty);
-            return swal.fire({
-                text: maxError,
-                icon: 'error',
-            });
+            return showAlertModal(maxError);
         }
 
         this.$overlay.show();
@@ -120,10 +101,8 @@ export default class Cart extends PageManager {
                 this.refreshContent(remove);
             } else {
                 $el.val(oldQty);
-                swal.fire({
-                    text: response.data.errors.join('\n'),
-                    icon: 'error',
-                });
+
+                return showAlertModal(response.data.errors.join('\n'));
             }
         });
     }
@@ -134,10 +113,8 @@ export default class Cart extends PageManager {
             if (response.data.status === 'succeed') {
                 this.refreshContent(true);
             } else {
-                swal.fire({
-                    text: response.data.errors.join('\n'),
-                    icon: 'error',
-                });
+                this.$overlay.hide();
+                showAlertModal(response.data.errors.join('\n'));
             }
         });
     }
@@ -174,6 +151,18 @@ export default class Cart extends PageManager {
                 this.$modal.one(ModalEvents.opened, optionChangeHandler);
             }
 
+            const modalForm = this.$modal.find('form');
+            const refreshContent = () => this.refreshContent();
+            async function onSubmit(event) {
+                event.preventDefault();
+                utils.api.cart.postFormData(new FormData(this), () => {
+                    modal.close();
+                    refreshContent();
+                });
+            }
+
+            modalForm.on('submit', onSubmit);
+
             this.productDetails = new CartItemDetails(this.$modal, context);
 
             this.bindGiftWrappingForm();
@@ -188,10 +177,7 @@ export default class Cart extends PageManager {
                 const data = result.data || {};
 
                 if (err) {
-                    swal.fire({
-                        text: err,
-                        icon: 'error',
-                    });
+                    showAlertModal(err);
                     return false;
                 }
 
@@ -240,10 +226,15 @@ export default class Cart extends PageManager {
             this.$cartAdditionalCheckoutBtns.html(response.additionalCheckoutButtons);
 
             $cartPageTitle.replaceWith(response.pageTitle);
-            this.bindEvents();
-            this.$overlay.hide();
 
             const quantity = $('[data-cart-quantity]', this.$cartContent).data('cartQuantity') || 0;
+
+            if (!quantity) {
+                return window.location.reload();
+            }
+
+            this.bindEvents();
+            this.$overlay.hide();
 
             $('body').trigger('cart-quantity-update', quantity);
 
@@ -271,29 +262,29 @@ export default class Cart extends PageManager {
         });
 
         // cart qty manually updates
-        $('.cart-item-qty-input', this.$cartContent).on('focus', function onQtyFocus() {
-            preVal = this.value;
-        }).change(event => {
-            const $target = $(event.currentTarget);
-            event.preventDefault();
+        $('.cart-item-qty-input', this.$cartContent).on({
+            focus: function onQtyFocus() {
+                preVal = this.value;
+            },
+            change: event => {
+                const $target = $(event.currentTarget);
+                event.preventDefault();
 
-            // update cart quantity
-            cartUpdateQtyTextChange($target, preVal);
+                // update cart quantity
+                cartUpdateQtyTextChange($target, preVal);
+            },
         });
 
         $('.cart-remove', this.$cartContent).on('click', event => {
             const itemId = $(event.currentTarget).data('cartItemid');
             const string = $(event.currentTarget).data('confirmDelete');
-            swal.fire({
-                text: string,
+            showAlertModal(string, {
                 icon: 'warning',
                 showCancelButton: true,
-                cancelButtonText: this.context.cancelButtonText,
-            }).then((result) => {
-                if (result.value) {
+                onConfirm: () => {
                     // remove item from cart
                     cartRemoveItem(itemId);
-                }
+                },
             });
             event.preventDefault();
         });
@@ -317,6 +308,7 @@ export default class Cart extends PageManager {
 
             $(event.currentTarget).hide();
             $couponContainer.show();
+            $couponContainer.attr('aria-hidden', false);
             $('.coupon-code-cancel').show();
             $codeInput.trigger('focus');
         });
@@ -325,6 +317,7 @@ export default class Cart extends PageManager {
             event.preventDefault();
 
             $couponContainer.hide();
+            $couponContainer.attr('aria-hidden', true);
             $('.coupon-code-cancel').hide();
             $('.coupon-code-add').show();
         });
@@ -336,20 +329,14 @@ export default class Cart extends PageManager {
 
             // Empty code
             if (!code) {
-                return swal.fire({
-                    text: $codeInput.data('error'),
-                    icon: 'error',
-                });
+                return showAlertModal($codeInput.data('error'));
             }
 
             utils.api.cart.applyCode(code, (err, response) => {
                 if (response.data.status === 'success') {
                     this.refreshContent();
                 } else {
-                    swal.fire({
-                        html: response.data.errors.join('\n'),
-                        icon: 'error',
-                    });
+                    showAlertModal(response.data.errors.join('\n'));
                 }
             });
         });
@@ -364,12 +351,14 @@ export default class Cart extends PageManager {
             event.preventDefault();
             $(event.currentTarget).toggle();
             $certContainer.toggle();
+            $certContainer.attr('aria-hidden', false);
             $('.gift-certificate-cancel').toggle();
         });
 
         $('.gift-certificate-cancel').on('click', event => {
             event.preventDefault();
             $certContainer.toggle();
+            $certContainer.attr('aria-hidden', true);
             $('.gift-certificate-add').toggle();
             $('.gift-certificate-cancel').toggle();
         });
@@ -381,20 +370,14 @@ export default class Cart extends PageManager {
 
             if (!checkIsGiftCertValid(code)) {
                 const validationDictionary = createTranslationDictionary(this.context);
-                return swal.fire({
-                    text: validationDictionary.invalid_gift_certificate,
-                    icon: 'error',
-                });
+                return showAlertModal(validationDictionary.invalid_gift_certificate);
             }
 
             utils.api.cart.applyGiftCertificate(code, (err, resp) => {
                 if (resp.data.status === 'success') {
                     this.refreshContent();
                 } else {
-                    swal.fire({
-                        html: resp.data.errors.join('\n'),
-                        icon: 'error',
-                    });
+                    showAlertModal(resp.data.errors.join('\n'));
                 }
             });
         });
@@ -418,6 +401,10 @@ export default class Cart extends PageManager {
 
                 this.bindGiftWrappingForm();
             });
+        });
+
+        $('.cart-item-option-remove').on('click', () => {
+            window.confirm(this.context.giftWrappingRemoveMessage);
         });
     }
 

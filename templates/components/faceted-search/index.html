@@ -1,4 +1,4 @@
-<div id="facetedSearch" class="facetedSearch sidebarBlock">
+<div id="facetedSearch" class="facetedSearch sidebarBlock" role="region" aria-label="{{lang 'search.faceted.label'}}">
     {{> components/faceted-search/selected-facets selected}}
 
     <a href="#facetedSearch-navList" role="button" class="facetedSearch-toggle toggleLink" data-collapsible>
@@ -15,7 +15,7 @@
                 {{lang 'search.faceted.hide-filters'}}
 
                 <i class="icon" aria-hidden="true">
-                    <svg><use xlink:href="#icon-keyboard-arrow-up"/></svg>
+                    <svg><use href="#icon-keyboard-arrow-up"/></svg>
                 </i>
             </span>
 
@@ -23,7 +23,7 @@
                 {{lang 'search.faceted.show-filters'}}
 
                 <i class="icon" aria-hidden="true">
-                    <svg><use xlink:href="#icon-keyboard-arrow-down"/></svg>
+                    <svg><use href="#icon-keyboard-arrow-down"/></svg>
                 </i>
             </span>
         </span>

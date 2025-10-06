@@ -11,6 +11,7 @@ import forms from '../common/models/forms';
 import { normalizeFormData } from './utils/api';
 import { isBrowserIE, convertIntoArray } from './utils/ie-helpers';
 import bannerUtils from './utils/banner-utils';
+import currencySelector from '../global/currency-selector';
 
 export default class ProductDetails extends ProductDetailsBase {
     constructor($scope, context, productAttributesData = {}) {
@@ -24,8 +25,15 @@ export default class ProductDetails extends ProductDetailsBase {
         this.swatchInitMessageStorage = {};
         this.swatchGroupIdList = $('[id^="swatchGroup"]').map((_, group) => $(group).attr('id'));
         this.storeInitMessagesForSwatches();
+        this.updateDateSelector();
 
         const $form = $('form[data-cart-item-add]', $scope);
+
+        if ($form[0].checkValidity()) {
+            this.updateProductDetailsData();
+        } else {
+            this.toggleWalletButtonsVisibility(false);
+        }
 
         this.addToCartValidator = nod({
             submit: $form.find('input#form-action-addToCart'),
@@ -258,12 +266,21 @@ export default class ProductDetails extends ProductDetailsBase {
             const productAttributesContent = response.content || {};
             this.updateProductAttributes(productAttributesData);
             this.updateView(productAttributesData, productAttributesContent);
+            this.updateProductDetailsData();
             bannerUtils.dispatchProductBannerEvent(productAttributesData);
 
             if (!this.checkIsQuickViewChild($form)) {
                 const $context = $form.parents('.productView').find('.productView-info');
                 modalFactory('[data-reveal]', { $context });
             }
+
+            document.dispatchEvent(new CustomEvent('onProductOptionsChanged', {
+                bubbles: true,
+                detail: {
+                    content: productAttributesData,
+                    data: productAttributesContent,
+                },
+            }));
         });
     }
 
@@ -360,6 +377,8 @@ export default class ProductDetails extends ProductDetailsBase {
             viewModel.quantity.$text.text(qty);
             // perform validation after updating product quantity
             this.addToCartValidator.performCheck();
+
+            this.updateProductDetailsData();
         });
 
         // Prevent triggering quantity change when pressing enter
@@ -370,6 +389,10 @@ export default class ProductDetails extends ProductDetailsBase {
                 // Prevent default
                 event.preventDefault();
             }
+        });
+
+        this.$scope.on('keyup', '.form-input--incrementTotal', () => {
+            this.updateProductDetailsData();
         });
     }
 
@@ -399,6 +422,7 @@ export default class ProductDetails extends ProductDetailsBase {
 
         // Add item to cart
         utils.api.cart.itemAdd(normalizeFormData(new FormData(form)), (err, response) => {
+            currencySelector(response.data.cart_id);
             const errorMessage = err || response.data.error;
 
             $addToCartBtn
@@ -532,5 +556,87 @@ export default class ProductDetails extends ProductDetailsBase {
     updateProductAttributes(data) {
         super.updateProductAttributes(data);
         this.showProductImage(data.image);
+    }
+
+    updateProductDetailsData() {
+        const $form = $('form[data-cart-item-add]');
+        const formDataItems = $form.serializeArray();
+
+        const productDetails = {};
+
+        for (const formDataItem of formDataItems) {
+            const { name, value } = formDataItem;
+
+            if (name === 'product_id') {
+                productDetails.productId = Number(value);
+            }
+
+            if (name === 'qty[]') {
+                productDetails.quantity = Number(value);
+            }
+
+            if (name.match(/attribute/)) {
+                const productOption = {
+                    optionId: Number(name.match(/\d+/g)[0]),
+                    optionValue: value,
+                };
+
+                productDetails.optionSelections = productDetails?.optionSelections
+                    ? [...productDetails.optionSelections, productOption]
+                    : [productOption];
+            }
+        }
+
+        document.dispatchEvent(new CustomEvent('onProductUpdate', {
+            bubbles: true,
+            detail: { productDetails },
+        }));
+    }
+
+    updateDateSelector() {
+        this.$scope.each((i, scope) => {
+            function updateDays(dateOption) {
+                const monthSelector = dateOption.querySelector('select[name$="[month]"]');
+                const daySelector = dateOption.querySelector('select[name$="[day]"]');
+                const yearSelector = dateOption.querySelector('select[name$="[year]"]');
+                const month = parseInt(monthSelector.value, 10);
+                const year = parseInt(yearSelector.value, 10);
+                let daysInMonth;
+
+                if (!Number.isNaN(month) && !Number.isNaN(year)) {
+                    switch (month) {
+                    case 2:
+                        daysInMonth = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0) ? 29 : 28;
+                        break;
+                    case 4: case 6: case 9: case 11:
+                        daysInMonth = 30;
+                        break;
+                    default:
+                        daysInMonth = 31;
+                    }
+
+                    for (let day = 29; day <= 31; day++) {
+                        const option = daySelector.querySelector(`option[value="${day}"]`);
+                        if (day <= daysInMonth && !option) {
+                            daySelector.options.add(new Option(day, day));
+                        } else if (day > daysInMonth && option) {
+                            option.remove();
+                        }
+                    }
+                }
+            }
+
+            $(scope).on('change', (e) => {
+                const dateOption = e.target && e.target.closest && e.target.closest('[data-product-attribute=date]');
+
+                if (dateOption) {
+                    updateDays(dateOption);
+                }
+            });
+
+            scope.querySelectorAll('[data-product-attribute=date]').forEach(dateOption => {
+                updateDays(dateOption);
+            });
+        });
     }
 }

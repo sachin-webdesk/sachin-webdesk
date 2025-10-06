@@ -10,38 +10,25 @@
     {{/each}}
 </div>
 {{/if}}
-<header class="header git_header new_pull" role="banner">
-      <svg><use xlink:href="#icon-AbTwitterHov" /></svg>
-      <a href="#" class="mobileMenu-toggle" data-mobile-menu-toggle="menu">
-          <span class="mobileMenu-toggleIcon">Toggle menu</span>
-      </a>
-      <div class="free-shipping_bar">
-        <div class="container">
-          <p>FREE SHIPPING on orders over $300</p>
-          <a href="javascript:void(0);" class="free_closed"><img src="/content/close-outline.svg" alt=""></a>
+<header class="header" role="banner">
+    <a href="#" class="mobileMenu-toggle" data-mobile-menu-toggle="menu">
+        <span class="mobileMenu-toggleIcon">Toggle menu</span>
+    </a>
+    {{> components/common/navigation}}
+
+    {{#if page_type '===' 'default'}}
+        <h1 class="header-logo header-logo--{{theme_settings.logo-position}}">
+            {{> components/common/store-logo}}
+        </h1>
+    {{else}}
+        <div class="header-logo header-logo--{{theme_settings.logo-position}}">
+            {{> components/common/store-logo}}
         </div>
-      </div>
-      <div class="header_middle">
-        <div class="container">
-          <div class="header_mid_left">
-            {{#if page_type '===' 'default'}}
-                <h1 class="header-logo header-logo--{{theme_settings.logo-position}}">
-                    {{> components/common/store-logo}}
-                </h1>
-            {{else}}
-                <div class="header-logo header-logo--{{theme_settings.logo-position}}">
-                    {{> components/common/store-logo}}
-                </div>
-            {{/if}}
-            <div class="navPages-container" id="menu" data-menu>
-              {{> components/common/navigation-menu}}
-            </div>
-          </div>
-          <div class="header_mid_right">
-            {{> components/common/navigation}}
-          </div>
-        </div>
-      </div>
+    {{/if}}
+    <div class="navPages-container" id="menu" data-menu>
+        {{> components/common/navigation-menu}}
+    </div>
+    {{{region name="header_navigation_bottom--global"}}}
 </header>
 {{{region name="header_bottom--global"}}}
 {{{region name="header_bottom"}}}

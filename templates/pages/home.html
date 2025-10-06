@@ -26,57 +26,20 @@ blog:
     {{/each}}
 
 <div class="main full">
-  <div class="cus_ser_topbar">
-    <ul>
-      <li>
-        <div class="cus_ser_img">
-          <img src="/content/fast_free_shipping.svg" alt="">
-        </div>
-        <div class="cus_ser_cnt">
-          <span>FAST FREE SHIPPING</span>
-        </div>
-      </li>
-      <li>
-        <div class="cus_ser_img">
-          <img src="/content/easy_return.svg" alt="">
-        </div>
-        <div class="cus_ser_cnt">
-          <span>EASY RETURN POLICY</span>
-        </div>
-      </li>
-      <li>
-        <div class="cus_ser_img">
-          <img src="/content/environmentally_consious.svg" alt="">
-        </div>
-        <div class="cus_ser_cnt">
-          <span>ENVIRONMENTALLY CONSCIOUS</span>
-        </div>
-      </li>
-      <li>
-        <div class="cus_ser_img">
-          <img src="/content/satisfaction_gurantee.svg" alt="">
-        </div>
-        <div class="cus_ser_cnt">
-          <span>SATISFACTION GUARANTEE</span>
-        </div>
-      </li>
-    </ul>
-  </div>
     {{#if products.featured}}
         {{> components/products/featured products=products.featured columns=theme_settings.homepage_featured_products_column_count}}
     {{/if}}
     {{{region name="home_below_featured_products"}}}
 
     {{#if products.top_sellers}}
-        {{!> components/products/top products=products.top_sellers columns=theme_settings.homepage_top_products_column_count}}
+        {{> components/products/top products=products.top_sellers columns=theme_settings.homepage_top_products_column_count}}
     {{/if}}
     {{{region name="home_below_top_products"}}}
 
     {{#if products.new}}
-        {{!> components/products/new products=products.new columns=theme_settings.homepage_new_products_column_count}}
+        {{> components/products/new products=products.new columns=theme_settings.homepage_new_products_column_count}}
     {{/if}}
     {{{region name="home_below_new_products"}}}
-    {{> components/common/HP-Custom-Section}}
 </div>
 {{/partial}}
 {{> layout/base}}

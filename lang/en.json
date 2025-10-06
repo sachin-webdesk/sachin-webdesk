@@ -39,6 +39,7 @@
     "cart": {
         "nav_aria_label": "Cart with 0 items",
         "continue_shopping": "Click here to continue shopping",
+        "login_to_checkout": "Login to proceed to checkout",
         "items": "{NUM, plural, =0{(0 items)} one {(# item)} other {(# items)}}",
         "checkout": {
             "address": {
@@ -78,6 +79,7 @@
         "remove_item": "Remove {name} from cart",
         "confirm_delete": "Are you sure you want to delete this item?",
         "coupons": {
+            "apply_coupon": "Apply coupon",
             "empty_error": "Please enter your coupon code.",
             "cancel": "Cancel",
             "add_code": "Add code",
@@ -88,6 +90,7 @@
             "remove": "Remove"
         },
         "gift_certificates": {
+            "apply_gift_certificate": "Apply gift certificate",
             "change_gift_certificate": "Change {certificate_name}",
             "add_cert_code": "Add Certificate",
             "gift_certificate": "Gift Certificate",
@@ -138,8 +141,10 @@
         "store_credit": "You have <strong>{store_credit}</strong> of store credit. To use it, simply place your order and you will be able to choose store credit as the payment method when it comes time to pay for your order.",
         "store_credit_overview": "{credit} Store Credit",
         "generic_error": "Oops! Something went wrong.",
-        "currency": "Select Currency: {code}",
+        "currency": "Currency: {code}",
         "currency_switch_promotion" : "Promotions and gift certificates that don't apply to the new currency will be removed from your cart. Are you sure you want to continue?",
+        "channel": "Store: {code}",
+        "channel_switch_warning" : "Warning text for store switching",
         "newsletter_signup": "Register for our newsletter",
         "form_submit": "Submit",
         "no_preference": "No Preference",
@@ -153,6 +158,7 @@
         "yes": "Yes",
         "from": "From",
         "to": "to",
+        "ok": "OK",
         "cancel": "Cancel",
         "close": "Close",
         "or": "or",
@@ -177,6 +183,7 @@
         "paginator": {
             "page_of": "Page {current} of {total}"
         },
+        "pagination": "Pagination",
         "prices_are_in": "Prices are in {CODE}",
         "previous": "Previous",
         "next": "Next",
@@ -221,6 +228,7 @@
     },
     "category": {
         "label": "Categories",
+        "product_label": "Filtered products",
         "shop_by_price": "Shop By Price",
         "shop_by_price_range_aria": "Price range from {from} to {to}",
         "filter_price_range": "Price range:",
@@ -258,7 +266,7 @@
         "heading": "New Account",
         "created": {
             "heading": "Your account has been created",
-            "intro": "Thank you for creating your account at {store_name}. Your account details have been emailed to <strong>{email}</strong>",
+            "intro": "Thank you for creating your account at {store_name}. Your account details have been emailed to {email}",
             "continue": "Continue Shopping"
         },
         "recaptcha_title": "Google recaptcha"
@@ -345,6 +353,7 @@
                 "ship_to": "Ship To",
                 "ship_to_multi": "Items shipped to {street}, {city}, {state}, {zip}, {country}",
                 "ship_to_multi_text": "Order will be shipped to multiple addresses",
+                "pickup_details": "Pickup Details",
                 "bill_to": "Bill To",
                 "how_to_pay": "Here's how to pay for your order:",
                 "order_details": "Order Details",
@@ -364,7 +373,13 @@
                 "actions": "Actions",
                 "reorder": "Reorder",
                 "return": "Return",
-                "print_invoice": "Print Invoice"
+                "pickup": "Pickup Details",
+                "pickup_method": "Pickup method",
+                "in_store_pickup": "In-store pickup",
+                "print_invoice": "Print Invoice",
+                "phone": "Phone",
+                "email": "Email",
+                "opening_hours": "Opening hours"
             },
             "downloads": {
                 "heading": "Order #{number} Downloads",
@@ -379,6 +394,7 @@
         "payment_methods": {
             "heading": "Payment Methods",
             "payment_method": "Payment method",
+            "bank_account": "Bank account",
             "billing_address": "Billing address",
             "card_ending_in": "ending in {last_four}",
             "card_expiry": "{month}/{year}",
@@ -388,17 +404,21 @@
             "credit_card_number": "Credit Card Number",
             "expiration": "Expiration",
             "cvv": "CVV",
+            "payment_icons_label": "Payment icons",
             "card_types": {
                 "american_express": "American Express",
                 "credit_card": "Credit Card",
                 "dankort": "Dankort",
-                "diners": "Diners Club",
+                "diners_club": "Diners Club",
                 "discover": "Discover",
                 "jcb": "JCB",
                 "maestro": "Maestro",
                 "mastercard": "Mastercard",
+                "unionpay": "Union Pay",
                 "visa": "Visa"
             },
+            "ach": "ACH",
+            "sepa_direct_debit": "SEPA Direct Debit",
             "paypal": "PayPal",
             "billing_address_labels": {
               "address_line_1": "Address Line 1",
@@ -426,6 +446,7 @@
             "reason": "Return Reason",
             "action": "Return Action",
             "comments": "Your Comments",
+            "submit_request": "Submit Return Request",
             "list": {
                 "return_number": "Return #{id}",
                 "product_details": "Returning {num_products}"
@@ -531,7 +552,8 @@
             "rma": "RMA Number",
             "question": "Comments/Questions",
             "submit": "Submit Form",
-            "successful": "We've received your feedback and will respond shortly if required. <a href=\"{shopPath}\">Continue</a>."
+            "successful": "We've received your feedback and will respond shortly if required. <a href=\"{shopPath}\">Continue</a>.",
+            "manual_captcha_instruction": "Please answer the question below for additional verification."
         },
         "create_account": {
             "submit_value": "Create Account"
@@ -688,6 +710,7 @@
             "reviews": {
                 "rating": "The 'Rating' field cannot be blank.",
                 "title": "The 'Review Subject' field cannot be blank.",
+                "name": "The 'Name' field cannot be blank.",
                 "comment": "The 'Comments' field cannot be blank."
             }
         }
@@ -756,6 +779,7 @@
         "shipping_free": "Free Shipping",
         "shipping_calculated": "Calculated at Checkout",
         "sold_out": "Sold Out",
+        "out_of_stock_default_message": "Sold Out",
         "pre_order": "Pre-Order Now",
         "choose_options": "Choose Options",
         "quick_view": "Quick view",
@@ -808,6 +832,10 @@
         "qty": "Qty",
         "code": "Code/SKU",
         "shipping_address": "Shipping Address",
+        "fulfillment": "Fulfillment",
+        "digital": "Digital",
+        "shipping": "Shipping",
+        "pickup": "Pickup",
         "product_name": "Product Name",
         "price": "Price",
         "total": "Total",
@@ -849,6 +877,7 @@
         "faceted": {
             "selected": {
                 "title": "Refine by",
+                "facet-label": "Applied filters",
                 "rating-label": "Rated {rating, plural, one {# Star} other {# Stars}} Or More",
                 "no-filters": "No filters applied",
                 "clear-all": "Clear all"
@@ -856,11 +885,14 @@
             "range": {
                 "update": "Update",
                 "min-placeholder": "Min.",
-                "max-placeholder": "Max."
+                "max-placeholder": "Max.",
+                "min-description": "Enter the minimum price to filter products by",
+                "max-description": "Enter the maximum price to filter products by"
             },
             "rating": {
                 "and-up": "& up"
             },
+            "label": "The following text field filters the results that follow as you type",
             "toggleSection": "Toggle {title} filter section",
             "clear": "Clear",
             "more": "More",
@@ -899,13 +931,6 @@
     },
     "maintenance": {
         "down": "Down for Maintenance"
-    },
-    "admin": {
-        "maintenance_header": "Your store is down for maintenance.",
-        "maintenance_tooltip": "Only administrators can view the store at the moment. Visit your control panel settings page to disable maintenance mode.",
-        "maintenance_showstore_link": "Click here to see what your visitors will see.",
-        "prelaunch_header": "Your storefront is private. Share your site with preview code:",
-        "page_builder_link": "Design this page in Page Builder"
     },
     "carousel": {
         "arrow_and_dot_aria_label": "Go to slide [SLIDE_NUMBER] of [SLIDES_QUANTITY]",
