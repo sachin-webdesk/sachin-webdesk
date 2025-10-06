@@ -1,0 +1,70 @@
+name: CI - BigCommerce Theme
+
+on:
+  pull_request:
+    branches: [ "**" ]
+  push:
+    branches: [ "**" ]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16.20.2'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8
+          # Ensure HTTPS for any git deps
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          rm -f package-lock.json
+          npm install --legacy-peer-deps
+
+      - name: Install Stencil CLI
+        run: npm install -g @bigcommerce/stencil-cli@3.0.0
+
+      - name: Build JS assets
+        run: npx webpack --config webpack.prod.js
+
+      - name: Generate parsed templates
+        run: |
+          rm -rf parsed/
+          stencil bundle
+          if [ ! -d "parsed" ] || [ -z "$(ls -A parsed/ 2>/dev/null)" ]; then
+            echo "Error: No parsed templates generated"
+            exit 1
+          fi
+
+      - name: Run unit tests
+        run: |
+          if npm run -s test; then
+            echo "Tests passed"
+          else
+            echo "Tests failed"
+            exit 1
+          fi
+
+      - name: Run stylelint (SCSS)
+        run: |
+          if npm run -s stylelint; then
+            echo "Stylelint passed"
+          else
+            echo "Stylelint failed"
+            exit 1
+          fi
+
+      - name: Upload parsed templates as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: parsed-templates
+          path: parsed/
+

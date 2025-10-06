@@ -1,0 +1,119 @@
+name: Deploy BigCommerce Theme (Production)
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16.20.2'
+
+      - name: Install dependencies
+        run: |
+          npm install -g npm@8
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global url."https://github.com/".insteadOf "git@github.com:"
+          rm -f package-lock.json
+          npm install --legacy-peer-deps
+
+      - name: Install Stencil CLI
+        run: npm install -g @bigcommerce/stencil-cli@3.0.0
+
+      - name: Build assets and parsed templates
+        run: |
+          rm -rf dist/ parsed/
+          npx webpack --config webpack.prod.js
+          stencil bundle
+          if [ ! -d "parsed" ] || [ -z "$(ls -A parsed/ 2>/dev/null)" ]; then
+            echo "Error: No parsed templates generated"
+            exit 1
+          fi
+
+      - name: Package theme
+        run: |
+          mkdir -p dist
+          PACKAGE_DIR="$RUNNER_TEMP/theme-package"
+          mkdir -p "$PACKAGE_DIR"
+          cp -r assets/ "$PACKAGE_DIR/"
+          cp -r config.json "$PACKAGE_DIR/"
+          cp -r templates/ "$PACKAGE_DIR/"
+          cp -r lang/ "$PACKAGE_DIR/"
+          cp -r parsed/ "$PACKAGE_DIR/"
+          cd "$PACKAGE_DIR"
+          zip -r "$GITHUB_WORKSPACE/dist/theme.zip" .
+
+      - name: Verify theme.zip
+        run: |
+          ls -lh ./dist
+          stat ./dist/theme.zip
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Upload theme to BigCommerce
+        env:
+          BC_API_TOKEN: ${{ secrets.BC_API_TOKEN }}
+          BC_STORE_HASH: ${{ secrets.BC_STORE_HASH }}
+        run: |
+          ZIP=$GITHUB_WORKSPACE/dist/theme.zip
+          curl -sS -X POST "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes" \
+            -H "X-Auth-Token: ${BC_API_TOKEN}" \
+            -H "Accept: application/json" \
+            -F "file=@${ZIP}" \
+            -o upload-response.json
+          cat upload-response.json
+          if [ ! -s "upload-response.json" ]; then
+            echo "Empty upload response"; exit 1; fi
+
+      - name: Process theme upload
+        id: process-upload
+        env:
+          BC_API_TOKEN: ${{ secrets.BC_API_TOKEN }}
+          BC_STORE_HASH: ${{ secrets.BC_STORE_HASH }}
+        run: |
+          JOB_ID=$(jq -r '.job_id' upload-response.json)
+          if [ -z "$JOB_ID" ] || [ "$JOB_ID" = "null" ]; then
+            echo "No job_id in response"; cat upload-response.json; exit 1; fi
+          for i in {1..30}; do
+            curl -sS -X GET "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/jobs/${JOB_ID}" \
+              -H "X-Auth-Token: ${BC_API_TOKEN}" \
+              -H "Accept: application/json" \
+              -o job-status.json
+            STATUS=$(jq -r '.data.status // .status // "UNKNOWN"' job-status.json)
+            if [ "$STATUS" = "COMPLETED" ]; then
+              THEME_UUID=$(jq -r '.data.result.theme_uuid' job-status.json)
+              echo "theme_uuid=$THEME_UUID" >> $GITHUB_OUTPUT
+              exit 0
+            elif [ "$STATUS" = "FAILED" ]; then
+              echo "Job failed"; jq '.' job-status.json; exit 1
+            else
+              sleep 10
+            fi
+          done
+          echo "Timed out waiting for job"; exit 1
+
+      - name: Publish theme
+        if: steps.process-upload.outcome == 'success'
+        env:
+          BC_API_TOKEN: ${{ secrets.BC_API_TOKEN }}
+          BC_STORE_HASH: ${{ secrets.BC_STORE_HASH }}
+          THEME_UUID: ${{ steps.process-upload.outputs.theme_uuid }}
+        run: |
+          curl -sS -X PUT "https://api.bigcommerce.com/stores/${BC_STORE_HASH}/v3/themes/${THEME_UUID}/actions/publish" \
+            -H "X-Auth-Token: ${BC_API_TOKEN}" \
+            -H "Accept: application/json" \
+            -o publish-response.json
+          cat publish-response.json
+          if jq -e '.status >= 400' publish-response.json >/dev/null 2>&1; then
+            echo "Publish failed"; jq '.' publish-response.json; exit 1; fi
+
